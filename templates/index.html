@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Log Analysis</title>
+    <style>
+        :root {
+            --bg-color: #f5f5f5;
+            --card-bg: white;
+            --text-color: #333;
+            --border-color: #eee;
+            --hover-color: #f5f5f5;
+        }
+        
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --border-color: #404040;
+            --hover-color: #3d3d3d;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .stat-box {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+        h1 {
+            color: var(--text-color);
+            text-align: center;
+        }
+        h2 {
+            color: var(--text-color);
+            margin-top: 0;
+        }
+        .summary {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .wp-admin-attempts {
+            margin-top: 40px;
+        }
+        
+        .wp-admin-attempts h2 {
+            text-align: center;
+            color: #d32f2f;
+        }
+        
+        .wp-admin-box {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--card-bg);
+            font-weight: bold;
+        }
+        
+        tr:hover {
+            background-color: var(--hover-color);
+        }
+        
+        .download-btn-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .download-btn:hover {
+            background-color: #45a049;
+        }
+        
+        /* Theme toggle styles */
+        .theme-toggle-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
+        
+        .theme-toggle i {
+            font-size: 1.2em;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="theme-toggle-container">
+        <button class="theme-toggle" onclick="toggleTheme()">
+            <i class="fas fa-sun"></i>
+            <span class="toggle-text">Light Mode</span>
+        </button>
+    </div>
+    
+    <h1>Access Log Analysis</h1>
+    
+    <div class="summary">
+        <h2>Summary</h2>
+        <p>Total Requests: {{ stats.total_requests }}</p>
+        <p>IPv4 Requests: {{ stats.ipv4_count }} | IPv6 Requests: {{ stats.ipv6_count }}</p>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-box">
+            <h2>Top Browsers</h2>
+            {% for browser, count in stats.top_browsers.items() %}
+            <div class="stat-item">
+                <span>{{ browser }}</span>
+                <span>{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="stat-box">
+            <h2>Top Operating Systems</h2>
+            {% for os, count in stats.top_os.items() %}
+            <div class="stat-item">
+                <span>{{ os }}</span>
+                <span>{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="stat-box">
+            <h2>Top IP Addresses</h2>
+            {% for ip, count in stats.top_ips.items() %}
+            <div class="stat-item">
+                <span>{{ ip }}</span>
+                <span>{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="stat-box">
+            <h2>Status Codes</h2>
+            {% for status, count in stats.status_codes.items() %}
+            <div class="stat-item">
+                <span>{{ status }}</span>
+                <span>{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="stat-box">
+            <h2>Top Hosts</h2>
+            {% for host, count in stats.top_hosts.items() %}
+            <div class="stat-item">
+                <span>{{ host }}</span>
+                <span>{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="stat-box">
+            <h2>Top Paths</h2>
+            {% for path, count in stats.top_paths.items() %}
+            <div class="stat-item">
+                <span>{{ path }}</span>
+                <span>{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="stat-box">
+            <h2>Top Attackers (WordPress)</h2>
+            {% if stats.top_attackers %}
+                {% for ip, count in stats.top_attackers.items() %}
+                <div class="stat-item">
+                    <span>{{ ip }}</span>
+                    <span>{{ count }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="stat-item">
+                    <span>No wp-admin attempts detected</span>
+                </div>
+            {% endif %}
+            {% if stats.top_attackers %}
+            <div class="download-btn-container">
+                <a href="{{ url_for('download_attackers_csv') }}" class="download-btn">Download CSV</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if stats.wp_admin_attempts %}
+    <div class="wp-admin-attempts">
+        <h2>WordPress Admin Access Attempts</h2>
+        <div class="stat-box wp-admin-box">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>IP Address</th>
+                        <th>Path</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attempt in stats.wp_admin_attempts %}
+                    <tr>
+                        <td>{{ attempt.timestamp|datetime }}</td>
+                        <td>{{ attempt.ip }}</td>
+                        <td>{{ attempt.path }}</td>
+                        <td>{{ attempt.status }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    <script>
+        function toggleTheme() {
+            const body = document.documentElement;
+            const toggle = document.querySelector('.theme-toggle');
+            const icon = toggle.querySelector('i');
+            const text = toggle.querySelector('.toggle-text');
+            
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                icon.className = 'fas fa-sun';
+                text.textContent = 'Light Mode';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                icon.className = 'fas fa-moon';
+                text.textContent = 'Dark Mode';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+        
+        // Check for saved theme preference
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            const toggle = document.querySelector('.theme-toggle');
+            const icon = toggle.querySelector('i');
+            const text = toggle.querySelector('.toggle-text');
+            
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                icon.className = 'fas fa-moon';
+                text.textContent = 'Dark Mode';
+            }
+        });
+    </script>
+</body>
+</html> 
