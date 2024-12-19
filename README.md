@@ -2,8 +2,6 @@
 
 A Flask web application that analyzes Caddy access logs and provides visual statistics about traffic patterns, browsers, operating systems, and potential WordPress attack attempts.
 
-![Screenshot of the application](screenshot.png)
-
 ## Features
 
 - 📊 Real-time analysis of Caddy access logs
